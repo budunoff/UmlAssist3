@@ -32,6 +32,10 @@ export function tokenizer(input:string): { type: string, value: string }[] {
         }
         let WHITESPACE = /\s/;
         if (WHITESPACE.test(char)) {
+            tokens.push({
+                type: 'white space',
+                value: char,
+            });
             current++;
             continue;
         }
@@ -43,6 +47,11 @@ export function tokenizer(input:string): { type: string, value: string }[] {
             while (NUMBERS.test(char)) {
                 value += char;
                 char = input[++current];
+                if (current === input.length) {
+                    //tokens.push({ type: 'name', value });
+                    //console.debug(tokens[tokens.length - 1]);
+                    break;
+                }
             }
 
             tokens.push({ type: 'number', value });
@@ -73,9 +82,15 @@ export function tokenizer(input:string): { type: string, value: string }[] {
             while (LETTERS.test(char)) {
                 value += char;
                 char = input[++current];
+                if (current === input.length) {
+                    //tokens.push({ type: 'name', value });
+                    //console.debug(tokens[tokens.length - 1]);
+                    break;
+                } 
             }
 
             tokens.push({ type: 'name', value });
+            
 
             continue;
         }

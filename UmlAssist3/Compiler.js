@@ -23,6 +23,10 @@ function tokenizer(input) {
         }
         let WHITESPACE = /\s/;
         if (WHITESPACE.test(char)) {
+            tokens.push({
+                type: 'white space',
+                value: char,
+            });
             current++;
             continue;
         }
@@ -32,6 +36,11 @@ function tokenizer(input) {
             while (NUMBERS.test(char)) {
                 value += char;
                 char = input[++current];
+                if (current === input.length) {
+                    //tokens.push({ type: 'name', value });
+                    //console.debug(tokens[tokens.length - 1]);
+                    break;
+                }
             }
             tokens.push({ type: 'number', value });
             continue;
@@ -53,6 +62,11 @@ function tokenizer(input) {
             while (LETTERS.test(char)) {
                 value += char;
                 char = input[++current];
+                if (current === input.length) {
+                    //tokens.push({ type: 'name', value });
+                    //console.debug(tokens[tokens.length - 1]);
+                    break;
+                }
             }
             tokens.push({ type: 'name', value });
             continue;
