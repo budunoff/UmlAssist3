@@ -1,0 +1,12 @@
+{
+  "name": "uml-assist3",
+  "version": "0.0.0",
+  "description": "UmlAssist3",
+  "main": "app.js",
+  "author": {
+    "name": ""
+  },
+  "devDependencies": {
+    "@types/node": "^8.10.40"
+  }
+}
