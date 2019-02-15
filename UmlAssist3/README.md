@@ -31,6 +31,7 @@ each *block* is made up from:
 * Statements
 * Other Blocks (*optionaly*)
 
+
 ###Simple block structure
 
 ####Block
@@ -103,3 +104,135 @@ A statement can be made from several lines:
 }
 ```
 
+##Rules
+ 
+ this transpiler turnes this code simultaniusley to PlantUml Code and(*optionaly*) diagram
+ and javaScript templates that make the software architecture planning and creation much easier.
+ 
+> **The next example will demonstrate the original code and the compilation result:**
+>> ```
+>>@blockName
+>>{
+>>	:statement a;
+>>    :statement b;
+>>    :statement c;
+>>    //and so on...
+>>}
+>>```
+>
+>**javaScript:**
+>
+>>```
+>>//#region blockName
+>>
+>>/**
+>>	statement a
+>>**/
+>>
+>>/**
+>>	statement b
+>>**/
+>>
+>>/**
+>>	statement c
+>>**/
+>>
+>>//#endregion
+>>```
+>
+>**PlantUml**
+>
+>>```
+>>@startuml
+>>partition blockName
+>>{
+>>	:statement a;
+>>	:statement b;
+>>	:statement c;
+>>	'and so on...
+>>}
+>>@enduml
+>>```
+
+---
+
+> **Another example:**
+>> ```
+>>@blockName
+>>{
+>>	:statement a;
+>>    
+>>    :all this is
+>>    statement b;
+>>    
+>>    :statement c
+>>    can be much longer
+>>    it can contain as many
+>>    lines as needed;
+>>    //and so on...
+>>}
+>>```
+>
+>**javaScript:**
+>
+>>```
+>>//#region blockName
+>>
+>>/**
+>>	statement a
+>>**/
+>>
+>>/**
+>>    all this is
+>>    statement b
+>>**/
+>>
+>>/**
+>>    statement c
+>>    can be much longer
+>>    it can contain as many
+>>    lines as needed
+>>**/
+>>
+>>//#endregion
+>>```
+>
+>**PlantUml**
+>
+>>```
+>>@startuml
+>>partition blockName
+>>{
+>>	:statement a;
+>>	:all this is
+>>	statement b;
+>>	:statement c
+>>	can be much longer
+>>	it can contain as many
+>>	lines as needed;
+>>	'and so on...
+>>}
+>>@enduml
+>>```
+
+---
+
+##Plans
+
+---
+
+###Task List:
+- [x] Finish the basic compiler - February 16, 2019 1:32 AM
+- [x] Finish the Js code generator - February 16, 2019 1:32 AM
+- [x] Finish the plantUml code generator - February 16, 2019 1:57 AM
+- [ ] Output dual code simultaniousley
+- [ ] Start working with files
+
+###Planned Features
+- [ ] Add Functions
+- [ ] Multiple files
+
+###Known Bugs
+- [ ] there is a **"non intended"** comma apearing in generated code - February 16, 2019 1:34 AM
+
+######Licence - [LGPL V3](https://opensource.org/licenses/lgpl-3.0.html)

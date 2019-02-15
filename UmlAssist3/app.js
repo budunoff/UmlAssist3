@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-console.debug('begin App\n');
+console.debug('app.js begin\n');
 //tokenizer
 const Compiler_1 = require("./Compiler");
 const Tokenizer = Compiler_1.tokenizer;
@@ -69,8 +69,10 @@ const tstData3 = `@blockName
     //and so on...	
 }`;
 //#endregion
-console.debug('running Tokenizer');
-var tokResult = Tokenizer(tstData3);
+let inp = tstData3;
+console.debug('original input:\n' + inp);
+console.debug('\nrunning Tokenizer');
+var tokResult = Tokenizer(inp);
 tokResult.forEach(tmp => {
     //if (tmp.type !== 'white space')
     console.debug(tmp);
@@ -91,16 +93,24 @@ console.debug('running Parser');
 var parResult = Parser(tokResult);
 const util = require('util');
 console.log(util.inspect(parResult, false, null, true /* enable colors */));
-//parResult1.body.forEach(tmp => {
-//    console.debug(tmp);
-//});
 //console.debug('running Traverser');
-//var travResult1 = Traverser();
-//console.debug('running Transformer');
-//var tranResult1 = Transformer();
-//console.debug('running CodeGenerator');
-//var codGenResult1 = CodeGenerator();
-//console.debug('running Compiler');
-//var comResult1 = Compiler();
-console.debug('end');
+//var travResult = Traverser();
+console.debug('running Transformer');
+var tranResult = Transformer(parResult);
+console.log(util.inspect(tranResult, false, null, true /* enable colors */));
+console.debug('running CodeGenerator');
+var codGenResult = CodeGenerator(tranResult);
+console.debug('\n' + codGenResult);
+console.debug('running Compiler');
+var comResult = Compiler(inp);
+console.debug('compiled result:\n\n' + comResult);
+//#region umlPlant
+console.debug('running CodeGenerator for umlPlant');
+var codGenResultUml = Compiler_1.codeGeneratorUml(tranResult);
+console.debug('\n' + codGenResultUml);
+console.debug('running Compiler for UmlPlant');
+var comResultUml = Compiler_1.compilerUml(inp);
+console.debug('compiled result:\n\n' + comResultUml);
+//#endregion
+console.debug('app.js end');
 //# sourceMappingURL=app.js.map

@@ -28,7 +28,7 @@ export function tokenizer(input:string): { type: string, value: string }[] {
 
 
 
-        //#region statement; {:..;}
+        //#region statement {:..;}
 
         if (char === ':') {
             let value = '';
@@ -42,7 +42,7 @@ export function tokenizer(input:string): { type: string, value: string }[] {
 
             char = input[++current];
 
-            tokens.push({ type: 'statement;', value });
+            tokens.push({ type: 'statement', value });
 
             continue;
         }
@@ -160,9 +160,9 @@ export function tokenizer(input:string): { type: string, value: string }[] {
 
         //#region unknown
 
-        tokens.push({ type: 'unknown', value: char });
-        current++;
-        //throw new TypeError('I dont know what this character is: ' + char);
+        //tokens.push({ type: 'unknown', value: char });
+        //current++;
+        throw new TypeError('I dont know what this character is: ' + char);
 
         //#endregion
 
@@ -192,14 +192,14 @@ export function parser(tokens:{ type: string, value: string }[]) {
 
 
 
-        //#region statement; -> statement; content
+        //#region statement; -> statementContent
 
-        if (token.type === 'statement;') {
+        if (token.type === 'statement') {
 
             current++;
 
             return {
-                type: 'statement; content',
+                type: 'statementContent',
                 value: token.value,
             };
         }
@@ -208,14 +208,14 @@ export function parser(tokens:{ type: string, value: string }[]) {
 
 
 
-        //#region comment -> comment content
+        //#region comment -> commentContent
 
         if (token.type === 'comment') {
 
             current++;
 
             return {
-                type: 'comment content',
+                type: 'commentContent',
                 value: token.value,
             };
         }
@@ -224,7 +224,7 @@ export function parser(tokens:{ type: string, value: string }[]) {
 
 
 
-        //#region pointer -> flow
+        //#region pointer -> region
 
         if (
             token.type === 'pointer' &&
@@ -235,7 +235,7 @@ export function parser(tokens:{ type: string, value: string }[]) {
             token = tokens[++current];
 
             let node = {
-                type: 'flow',
+                type: 'region',
                 name: token.value,
                 params: [],
             };
@@ -295,16 +295,16 @@ export function traverser(ast, visitor) {
 
         switch (node.type) {
 
-            case 'Program':
+            case 'Root':
                 traverseArray(node.body, node);
                 break;
 
-            case 'CallExpression':
+            case 'region':
                 traverseArray(node.params, node);
                 break;
 
-            case 'NumberLiteral':
-            case 'StringLiteral':
+            case 'statementContent':
+            case 'commentContent':
                 break;
 
             default:
@@ -321,41 +321,41 @@ export function traverser(ast, visitor) {
 
 export function transformer(ast) {
     let newAst = {
-        type: 'Program',
+        type: 'Root',
         body: [],
     };
 
     ast._context = newAst.body;
 
-    traverser(ast, {
+    let visitor = {
 
-        NumberLiteral: {
-          
+        statementContent: {
+
             enter(node, parent) {
 
                 parent._context.push({
-                    type: 'NumberLiteral',
+                    type: 'statementContent',
                     value: node.value,
                 });
             },
         },
 
-        StringLiteral: {
+        commentContent: {
             enter(node, parent) {
                 parent._context.push({
-                    type: 'StringLiteral',
+                    type: 'commentContent',
                     value: node.value,
                 });
             },
         },
 
-        CallExpression: {
+        region: {
             enter(node, parent) {
 
                 let expression = {
-                    type: 'CallExpression',
+                    type: 'Region',
                     callee: {
-                        type: 'Identifier',
+                        type: 'RegionName',
                         name: node.name,
                     },
                     arguments: [],
@@ -363,10 +363,10 @@ export function transformer(ast) {
 
                 node._context = expression.arguments;
 
-                if (parent.type !== 'CallExpression') {
+                if (parent.type !== 'region') {
 
                     expression = {
-                        type: 'ExpressionStatement',
+                        type: 'MainRegion',
                         //@ts-ignore
                         expression: expression,
                     };
@@ -375,50 +375,109 @@ export function transformer(ast) {
                 parent._context.push(expression);
             },
         }
-    });
+    };
+
+    traverser(ast, visitor);
 
     return newAst;
 }
+
 
 export function codeGenerator(node) {
     
     switch (node.type) {
         
-        case 'Program':
+        case 'Root':
             return node.body.map(codeGenerator)
                 .join('\n');
         
-        case 'ExpressionStatement':
+        case 'Region':
             return (
-                codeGenerator(node.expression) +
-                ';' 
+                '//#region Region ' + codeGenerator(node.callee) + '\n\n\n' +
+                node.arguments.map(codeGenerator) +
+                '\n\n\n//#endregion'
             );
+
+
         
-        case 'CallExpression':
-            return (
-                codeGenerator(node.callee) +
-                '(' +
-                node.arguments.map(codeGenerator)
-                    .join(', ') +
-                ')'
-            );
-        
-        case 'Identifier':
+        case 'RegionName':
             return node.name;
+
+        case 'MainRegion':
+            return (
+                '//#region Main Region(entry)\n\n\n' +
+                codeGenerator(node.expression) +
+                '\n\n\n//#endregion'
+            );
         
-        case 'NumberLiteral':
-            return node.value;
+        case 'commentContent':
+            return;
         
-        case 'StringLiteral':
-            return '"' + node.value + '"';
+        case 'statementContent':
+            return '\n\n\n/**\n\n\n' + node.value + '\n\n\n**/\n\n\n';
         
         default:
             throw new TypeError(node.type);
     }
 }
 
-export function compiler(input) {
+
+//#region plantUml
+
+
+export function codeGeneratorUml(node) {
+
+    switch (node.type) {
+
+        case 'Root':
+            return node.body.map(codeGeneratorUml)
+                .join('\n');
+
+        case 'Region':
+            return (
+                'partition ' + codeGeneratorUml(node.callee) + '\n{\n' +
+                node.arguments.map(codeGeneratorUml) +
+                '\n}\n'
+            );
+
+
+
+        case 'RegionName':
+            return node.name;
+
+        case 'MainRegion':
+            return (
+                'partition Main(entry)\n{\n' +
+                codeGeneratorUml(node.expression) +
+                '\n}\n'
+            );
+
+        case 'commentContent':
+            return "'" + node.value;
+
+        case 'statementContent':
+            return ':' + node.value + ';\n';
+
+        default:
+            throw new TypeError(node.type);
+    }
+}
+
+//#endregion
+
+
+export function compiler(input: string): string {
     let tokens = tokenizer(input);
+
+    let hlpr = [];
+    tokens.forEach(tmp => {
+
+        if (tmp.type !== 'white space' && tmp.type !== 'new line') {
+            hlpr.push(tmp);
+        }
+    });
+    tokens = hlpr;
+
     let ast = parser(tokens);
     let newAst = transformer(ast);
     let output = codeGenerator(newAst);
@@ -426,3 +485,29 @@ export function compiler(input) {
     // and simply return the output!
     return output;
 }
+
+//#region compiler umlPlant
+
+
+export function compilerUml(input: string): string {
+    let tokens = tokenizer(input);
+
+    let hlpr = [];
+    tokens.forEach(tmp => {
+
+        if (tmp.type !== 'white space' && tmp.type !== 'new line') {
+            hlpr.push(tmp);
+        }
+    });
+    tokens = hlpr;
+
+    let ast = parser(tokens);
+    let newAst = transformer(ast);
+    let output = codeGeneratorUml(newAst);
+
+    // and simply return the output!
+    return output;
+}
+
+
+//#endregion
