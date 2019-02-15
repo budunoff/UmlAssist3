@@ -85,8 +85,28 @@ tokResult.forEach(tmp => {
     //if (tmp.type !== 'white space')
     console.debug(tmp);
 });
+
+console.debug('clearing white spaces and new lines');
+let hlpr = [];
+tokResult.forEach(tmp => {
+
+    if (tmp.type !== 'white space' && tmp.type !== 'new line') {
+        hlpr.push(tmp);
+    }
+});
+tokResult = hlpr;
+tokResult.forEach(tmp => {
+    //if (tmp.type !== 'white space')
+    console.debug(tmp);
+});
+
 console.debug('running Parser');
-var parResult1 = Parser(tokResult);
+var parResult = Parser(tokResult);
+
+const util = require('util')
+
+console.log(util.inspect(parResult, false, null, true /* enable colors */))
+
 //parResult1.body.forEach(tmp => {
 //    console.debug(tmp);
 //});

@@ -28,7 +28,7 @@ function tokenizer(input) {
             continue;
         }
         //#endregion
-        //#region comment; {//..\n}
+        //#region comment {//..\n}
         if (char === '/' && input[current + 1] === '/') {
             let value = '';
             char = input[++current];
@@ -38,11 +38,11 @@ function tokenizer(input) {
                 char = input[++current];
             }
             char = input[++current];
-            tokens.push({ type: 'comment;', value });
+            tokens.push({ type: 'comment', value });
             continue;
         }
         //#endregion
-        //#region white space{'\n'}
+        //#region new line{'\n'}
         if (char === '\n') {
             tokens.push({
                 type: 'new line',
@@ -111,28 +111,54 @@ function parser(tokens) {
     let current = 0;
     function walk() {
         let token = tokens[current];
-        //#region NumberLiteral <- number
-        if (token.type === 'number') {
+        //#region new line | white space 
+        while (token.type === 'new line' || token.type === 'white space') {
+            token = tokens[++current];
+        }
+        //#endregion
+        //#region statement; -> statement; content
+        if (token.type === 'statement;') {
             current++;
             return {
-                type: 'NumberLiteral',
+                type: 'statement; content',
                 value: token.value,
             };
         }
         //#endregion
-        //#region StringLiteral <- string
-        if (token.type === 'string') {
+        //#region comment -> comment content
+        if (token.type === 'comment') {
             current++;
             return {
-                type: 'StringLiteral',
+                type: 'comment content',
                 value: token.value,
             };
+        }
+        //#endregion
+        //#region pointer -> flow
+        if (token.type === 'pointer' &&
+            tokens[current + 1].type === 'name' &&
+            (tokens[current + 2].type === 'block' && tokens[current + 2].value === '{')) {
+            token = tokens[++current];
+            let node = {
+                type: 'flow',
+                name: token.value,
+                params: [],
+            };
+            token = tokens[++current];
+            token = tokens[++current];
+            while (token.type !== 'block' ||
+                token.type === 'block' && token.value !== '}') {
+                node.params.push(walk());
+                token = tokens[current];
+            }
+            current++;
+            return node;
         }
         //#endregion
         throw new TypeError(token.type);
     }
     let ast = {
-        type: 'Program',
+        type: 'Root',
         body: [],
     };
     while (current < tokens.length) {

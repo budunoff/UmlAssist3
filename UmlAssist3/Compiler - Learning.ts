@@ -193,7 +193,8 @@ export function parser(tokens:{ type: string, value: string }[]) {
             while (
                 (token.type !== 'paren') ||
                 (token.type === 'paren' && token.value !== ')')
-            ) {                node.params.push(walk());
+            ) {
+                node.params.push(walk());
                 token = tokens[current];
             }
 
