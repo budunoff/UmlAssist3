@@ -6,89 +6,34 @@ export function tokenizer(input:string): { type: string, value: string }[] {
     let current: number = 0;
 
     let tokens: { type: string, value: string }[] = [];
-    
+
     while (current < input.length) {
 
         let char = input[current];
-        
-        //#region pointer{@}
 
-        if (char === '@') {
+        //#region paren:{(,)}
+
+        if (char === '(') {
 
             tokens.push({
-                type: 'pointer',
-                value: '@',
+                type: 'paren',
+                value: '(',
             });
             current++;
 
             continue;
         }
 
-        //#endregion
-
-
-
-        //#region statement; {:..;}
-
-        if (char === ':') {
-            let value = '';
-
-            char = input[++current];
-
-            while (char !== ';') {
-                value += char;
-                char = input[++current];
-            }
-
-            char = input[++current];
-
-            tokens.push({ type: 'statement;', value });
-
-            continue;
-        }
-
-        //#endregion
-
-
-
-        //#region comment; {//..\n}
-
-        if (char === '/' && input[current+1]==='/') {
-            let value = '';
-
-            char = input[++current];
-            char = input[++current];
-
-            while (char !== '\n') {
-                value += char;
-                char = input[++current];
-            }
-
-            char = input[++current];
-
-            tokens.push({ type: 'comment;', value });
-
-            continue;
-        }
-
-        //#endregion
-
-
-
-        //#region white space{'\n'}
-        
-        if (char==='\n') {
+        if (char === ')') {
             tokens.push({
-                type: 'new line',
-                value: char,
+                type: 'paren',
+                value: ')',
             });
             current++;
             continue;
         }
 
         //#endregion
-
-
 
         //#region white space{/\s/}
 
@@ -104,33 +49,48 @@ export function tokenizer(input:string): { type: string, value: string }[] {
 
         //#endregion
 
+        //#region number {/[0-9]/}
 
+        let NUMBERS = /[0-9]/;
+        if (NUMBERS.test(char)) {
 
-        //#region block:{{,}}
+            let value = '';
+            while (NUMBERS.test(char)) {
+                value += char;
+                char = input[++current];
+                if (current === input.length) {
+                    //tokens.push({ type: 'name', value });
+                    //console.debug(tokens[tokens.length - 1]);
+                    break;
+                }
+            }
 
-        if (char === '{') {
-
-            tokens.push({
-                type: 'block',
-                value: '{',
-            });
-            current++;
-
-            continue;
-        }
-
-        if (char === '}') {
-            tokens.push({
-                type: 'block',
-                value: '}',
-            });
-            current++;
+            tokens.push({ type: 'number', value });
             continue;
         }
 
         //#endregion
 
+        //#region string {"}
 
+        if (char === '"') {
+            let value = '';
+
+            char = input[++current];
+
+            while (char !== '"') {
+                value += char;
+                char = input[++current];
+            }
+
+            char = input[++current];
+
+            tokens.push({ type: 'string', value });
+
+            continue;
+        }
+
+        //#endregion
 
         //#region name {/[a-z]/i}
 
@@ -156,8 +116,6 @@ export function tokenizer(input:string): { type: string, value: string }[] {
 
         //#endregion
 
-
-
         //#region unknown
 
         tokens.push({ type: 'unknown', value: char });
@@ -165,7 +123,6 @@ export function tokenizer(input:string): { type: string, value: string }[] {
         //throw new TypeError('I dont know what this character is: ' + char);
 
         //#endregion
-
 
     }
 
@@ -178,7 +135,16 @@ export function parser(tokens:{ type: string, value: string }[]) {
     function walk() {
 
         let token = tokens[current];
-        
+
+        //#region undefined
+
+        while (token.type === 'white space' || token.type === 'unknown') {
+
+            current++;
+            token = tokens[current];
+        }
+
+        //#endregion
 
         //#region NumberLiteral <- number
 
@@ -203,6 +169,37 @@ export function parser(tokens:{ type: string, value: string }[]) {
                 type: 'StringLiteral',
                 value: token.value,
             };
+        }
+
+        //#endregion
+
+        //#region CallExpression <- paren
+
+        if (
+            token.type === 'paren' &&
+            token.value === '('
+        ) {
+
+            token = tokens[++current];
+
+            let node = {
+                type: 'CallExpression',
+                name: token.value,
+                params: [],
+            };
+
+            token = tokens[++current];
+
+            while (
+                (token.type !== 'paren') ||
+                (token.type === 'paren' && token.value !== ')')
+            ) {                node.params.push(walk());
+                token = tokens[current];
+            }
+
+            current++;
+
+            return node;
         }
 
         //#endregion

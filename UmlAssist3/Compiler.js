@@ -5,22 +5,54 @@ function tokenizer(input) {
     let tokens = [];
     while (current < input.length) {
         let char = input[current];
-        if (char === '(') {
+        //#region pointer{@}
+        if (char === '@') {
             tokens.push({
-                type: 'paren',
-                value: '(',
+                type: 'pointer',
+                value: '@',
             });
             current++;
             continue;
         }
-        if (char === ')') {
+        //#endregion
+        //#region statement; {:..;}
+        if (char === ':') {
+            let value = '';
+            char = input[++current];
+            while (char !== ';') {
+                value += char;
+                char = input[++current];
+            }
+            char = input[++current];
+            tokens.push({ type: 'statement;', value });
+            continue;
+        }
+        //#endregion
+        //#region comment; {//..\n}
+        if (char === '/' && input[current + 1] === '/') {
+            let value = '';
+            char = input[++current];
+            char = input[++current];
+            while (char !== '\n') {
+                value += char;
+                char = input[++current];
+            }
+            char = input[++current];
+            tokens.push({ type: 'comment;', value });
+            continue;
+        }
+        //#endregion
+        //#region white space{'\n'}
+        if (char === '\n') {
             tokens.push({
-                type: 'paren',
-                value: ')',
+                type: 'new line',
+                value: char,
             });
             current++;
             continue;
         }
+        //#endregion
+        //#region white space{/\s/}
         let WHITESPACE = /\s/;
         if (WHITESPACE.test(char)) {
             tokens.push({
@@ -30,32 +62,26 @@ function tokenizer(input) {
             current++;
             continue;
         }
-        let NUMBERS = /[0-9]/;
-        if (NUMBERS.test(char)) {
-            let value = '';
-            while (NUMBERS.test(char)) {
-                value += char;
-                char = input[++current];
-                if (current === input.length) {
-                    //tokens.push({ type: 'name', value });
-                    //console.debug(tokens[tokens.length - 1]);
-                    break;
-                }
-            }
-            tokens.push({ type: 'number', value });
+        //#endregion
+        //#region block:{{,}}
+        if (char === '{') {
+            tokens.push({
+                type: 'block',
+                value: '{',
+            });
+            current++;
             continue;
         }
-        if (char === '"') {
-            let value = '';
-            char = input[++current];
-            while (char !== '"') {
-                value += char;
-                char = input[++current];
-            }
-            char = input[++current];
-            tokens.push({ type: 'string', value });
+        if (char === '}') {
+            tokens.push({
+                type: 'block',
+                value: '}',
+            });
+            current++;
             continue;
         }
+        //#endregion
+        //#region name {/[a-z]/i}
         let LETTERS = /[a-z]/i;
         if (LETTERS.test(char)) {
             let value = '';
@@ -71,9 +97,12 @@ function tokenizer(input) {
             tokens.push({ type: 'name', value });
             continue;
         }
-        tokens.push({ type: 'Unknown', value: char });
+        //#endregion
+        //#region unknown
+        tokens.push({ type: 'unknown', value: char });
         current++;
         //throw new TypeError('I dont know what this character is: ' + char);
+        //#endregion
     }
     return tokens;
 }
@@ -82,6 +111,7 @@ function parser(tokens) {
     let current = 0;
     function walk() {
         let token = tokens[current];
+        //#region NumberLiteral <- number
         if (token.type === 'number') {
             current++;
             return {
@@ -89,6 +119,8 @@ function parser(tokens) {
                 value: token.value,
             };
         }
+        //#endregion
+        //#region StringLiteral <- string
         if (token.type === 'string') {
             current++;
             return {
@@ -96,23 +128,7 @@ function parser(tokens) {
                 value: token.value,
             };
         }
-        if (token.type === 'paren' &&
-            token.value === '(') {
-            token = tokens[++current];
-            let node = {
-                type: 'CallExpression',
-                name: token.value,
-                params: [],
-            };
-            token = tokens[++current];
-            while ((token.type !== 'paren') ||
-                (token.type === 'paren' && token.value !== ')')) {
-                node.params.push(walk());
-                token = tokens[current];
-            }
-            current++;
-            return node;
-        }
+        //#endregion
         throw new TypeError(token.type);
     }
     let ast = {
