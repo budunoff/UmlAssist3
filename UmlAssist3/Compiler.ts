@@ -1,4 +1,6 @@
-﻿export function tokenizer(input:string): { type: string, value: string }[] {
+﻿import { type } from "os";
+
+export function tokenizer(input:string): { type: string, value: string }[] {
 
 
     let current: number = 0;
@@ -78,7 +80,9 @@
             continue;
         }
 
-        throw new TypeError('I dont know what this character is: ' + char);
+        tokens.push({ type: 'Unknown', value: char });
+        current++;
+        //throw new TypeError('I dont know what this character is: ' + char);
     }
 
     return tokens;

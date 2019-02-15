@@ -57,7 +57,9 @@ function tokenizer(input) {
             tokens.push({ type: 'name', value });
             continue;
         }
-        throw new TypeError('I dont know what this character is: ' + char);
+        tokens.push({ type: 'Unknown', value: char });
+        current++;
+        //throw new TypeError('I dont know what this character is: ' + char);
     }
     return tokens;
 }
