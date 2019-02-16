@@ -233,6 +233,6 @@ A statement can be made from several lines:
 - [ ] Multiple files
 
 ###Known Bugs
-- [ ] there is a **"non intended"** comma apearing in generated code - February 16, 2019 1:34 AM
+- [x] there is a **"non intended"** comma apearing in generated code - February 16, 2019 1:34 AM
 
 ######Licence - [LGPL V3](https://opensource.org/licenses/lgpl-3.0.html)
