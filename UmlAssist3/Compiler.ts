@@ -393,9 +393,9 @@ export function codeGenerator(node) {
         
         case 'Region':
             return (
-                '//#region Region ' + codeGenerator(node.callee) + '\n\n\n' +
-                node.arguments.map(codeGenerator) +
-                '\n\n\n//#endregion'
+                '//#region Region ' + codeGenerator(node.callee) + '\n\n' +
+                node.arguments.map(codeGenerator).join('') +
+                '\n\n//#endregion'
             );
 
 
@@ -405,20 +405,41 @@ export function codeGenerator(node) {
 
         case 'MainRegion':
             return (
-                '//#region Main Region(entry)\n\n\n' +
+                '//#region Main Region(entry)\n\n' +
                 codeGenerator(node.expression) +
-                '\n\n\n//#endregion'
+                '\n\n//#endregion'
             );
         
         case 'commentContent':
             return;
         
         case 'statementContent':
-            return '\n\n\n/**\n\n\n' + node.value + '\n\n\n**/\n\n\n';
+            return '\n/**\n' + node.value + '\n**/\n\n';
         
         default:
             throw new TypeError(node.type);
     }
+}
+
+
+export function compiler(input: string): string {
+    let tokens = tokenizer(input);
+
+    let hlpr = [];
+    tokens.forEach(tmp => {
+
+        if (tmp.type !== 'white space' && tmp.type !== 'new line') {
+            hlpr.push(tmp);
+        }
+    });
+    tokens = hlpr;
+
+    let ast = parser(tokens);
+    let newAst = transformer(ast);
+    let output = codeGenerator(newAst);
+
+    // and simply return the output!
+    return output;
 }
 
 
@@ -435,8 +456,8 @@ export function codeGeneratorUml(node) {
 
         case 'Region':
             return (
-                'partition ' + codeGeneratorUml(node.callee) + '\n{\n' +
-                node.arguments.map(codeGeneratorUml) +
+                'partition ' + codeGeneratorUml(node.callee) + '\n{\n\t' +
+                node.arguments.map(codeGeneratorUml).join('\t') +
                 '\n}\n'
             );
 
@@ -463,30 +484,6 @@ export function codeGeneratorUml(node) {
     }
 }
 
-//#endregion
-
-
-export function compiler(input: string): string {
-    let tokens = tokenizer(input);
-
-    let hlpr = [];
-    tokens.forEach(tmp => {
-
-        if (tmp.type !== 'white space' && tmp.type !== 'new line') {
-            hlpr.push(tmp);
-        }
-    });
-    tokens = hlpr;
-
-    let ast = parser(tokens);
-    let newAst = transformer(ast);
-    let output = codeGenerator(newAst);
-
-    // and simply return the output!
-    return output;
-}
-
-//#region compiler umlPlant
 
 
 export function compilerUml(input: string): string {

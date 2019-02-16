@@ -253,50 +253,24 @@ function codeGenerator(node) {
             return node.body.map(codeGenerator)
                 .join('\n');
         case 'Region':
-            return ('//#region Region ' + codeGenerator(node.callee) + '\n\n\n' +
-                node.arguments.map(codeGenerator) +
-                '\n\n\n//#endregion');
+            return ('//#region Region ' + codeGenerator(node.callee) + '\n\n' +
+                node.arguments.map(codeGenerator).join('') +
+                '\n\n//#endregion');
         case 'RegionName':
             return node.name;
         case 'MainRegion':
-            return ('//#region Main Region(entry)\n\n\n' +
+            return ('//#region Main Region(entry)\n\n' +
                 codeGenerator(node.expression) +
-                '\n\n\n//#endregion');
+                '\n\n//#endregion');
         case 'commentContent':
             return;
         case 'statementContent':
-            return '\n\n\n/**\n\n\n' + node.value + '\n\n\n**/\n\n\n';
+            return '\n/**\n' + node.value + '\n**/\n\n';
         default:
             throw new TypeError(node.type);
     }
 }
 exports.codeGenerator = codeGenerator;
-//#region plantUml
-function codeGeneratorUml(node) {
-    switch (node.type) {
-        case 'Root':
-            return node.body.map(codeGeneratorUml)
-                .join('\n');
-        case 'Region':
-            return ('partition ' + codeGeneratorUml(node.callee) + '\n{\n' +
-                node.arguments.map(codeGeneratorUml) +
-                '\n}\n');
-        case 'RegionName':
-            return node.name;
-        case 'MainRegion':
-            return ('partition Main(entry)\n{\n' +
-                codeGeneratorUml(node.expression) +
-                '\n}\n');
-        case 'commentContent':
-            return "'" + node.value;
-        case 'statementContent':
-            return ':' + node.value + ';\n';
-        default:
-            throw new TypeError(node.type);
-    }
-}
-exports.codeGeneratorUml = codeGeneratorUml;
-//#endregion
 function compiler(input) {
     let tokens = tokenizer(input);
     let hlpr = [];
@@ -313,7 +287,31 @@ function compiler(input) {
     return output;
 }
 exports.compiler = compiler;
-//#region compiler umlPlant
+//#region plantUml
+function codeGeneratorUml(node) {
+    switch (node.type) {
+        case 'Root':
+            return node.body.map(codeGeneratorUml)
+                .join('\n');
+        case 'Region':
+            return ('partition ' + codeGeneratorUml(node.callee) + '\n{\n\t' +
+                node.arguments.map(codeGeneratorUml).join('\t') +
+                '\n}\n');
+        case 'RegionName':
+            return node.name;
+        case 'MainRegion':
+            return ('partition Main(entry)\n{\n' +
+                codeGeneratorUml(node.expression) +
+                '\n}\n');
+        case 'commentContent':
+            return "'" + node.value;
+        case 'statementContent':
+            return ':' + node.value + ';\n';
+        default:
+            throw new TypeError(node.type);
+    }
+}
+exports.codeGeneratorUml = codeGeneratorUml;
 function compilerUml(input) {
     let tokens = tokenizer(input);
     let hlpr = [];
